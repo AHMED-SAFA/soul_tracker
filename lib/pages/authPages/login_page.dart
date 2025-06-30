@@ -5,6 +5,9 @@ import 'package:get_it/get_it.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:map_tracker/services/auth_service.dart';
 import 'package:map_tracker/services/navigation_service.dart';
+import 'package:map_tracker/widgets/login_reg_loading.dart';
+
+import '../../widgets/toast_widget.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -51,7 +54,12 @@ class _LoginState extends State<Login> {
               if (!isLoading) _loginCard(),
               const SizedBox(height: 30),
               if (!isLoading) _signUpSection(),
-              if (isLoading) _loadingSection(),
+              if (isLoading)
+                LoginRegLoading(
+                  title: 'Signing you in...',
+                  subtitle: 'Please wait a moment',
+                  hint: 'Setting up your account securely',
+                ),
             ],
           ),
         ),
@@ -347,33 +355,28 @@ class _LoginState extends State<Login> {
             password = _passwordController.text;
             bool success = await _authService.login(email!, password!);
             if (success) {
-              Fluttertoast.showToast(
-                msg: 'Welcome back! Login successful',
-                toastLength: Toast.LENGTH_LONG, // ~3 seconds
-                gravity: ToastGravity.BOTTOM,
+
+              ToastWidget.show(
+                context: context,
+                title:
+                "Welcome back! Login successful",
+                iconColor: Colors.black,
                 backgroundColor: Colors.green,
-                textColor: Colors.white,
-                fontSize: 14.0,
-                timeInSecForIosWeb: 3,
               );
               _navigationService.pushReplacementNamed("/home");
             } else {
               setState(() {
                 isLoading = false;
               });
-              DelightToastBar(
-                builder: (context) => const ToastCard(
-                  leading: Icon(
-                    Icons.error_outline,
-                    size: 28,
-                    color: Colors.red,
-                  ),
-                  title: Text(
+
+              ToastWidget.show(
+                context: context,
+                title:
                     "Login failed. Please check your credentials and try again.",
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                ),
-              ).show(context);
+                icon: Icons.error_outline,
+                iconColor: Colors.black,
+                backgroundColor: Color(0xFFF84949),
+              );
             }
           }
         },
@@ -393,225 +396,6 @@ class _LoginState extends State<Login> {
             letterSpacing: 0.5,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _loadingSection() {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.grey[50]!, Colors.grey[100]!],
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Animated container with glassmorphism effect
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 1500),
-            curve: Curves.easeInOut,
-            padding: const EdgeInsets.all(40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.9),
-                  Colors.white.withOpacity(0.7),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
-                  blurRadius: 30,
-                  offset: const Offset(0, 15),
-                  spreadRadius: -5,
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Custom animated loading indicator
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Outer rotating circle
-                    TweenAnimationBuilder(
-                      tween: Tween<double>(begin: 0, end: 1),
-                      duration: const Duration(seconds: 2),
-                      builder: (context, double value, child) {
-                        return Transform.rotate(
-                          angle: value * 2 * 3.14159,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFF6366F1),
-                                  const Color(0xFF8B5CF6),
-                                  const Color(0xFF06B6D4),
-                                ],
-                              ),
-                            ),
-                            child: Container(
-                              margin: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    // Inner pulsing dot
-                    TweenAnimationBuilder(
-                      tween: Tween<double>(begin: 0.8, end: 1.2),
-                      duration: const Duration(milliseconds: 1000),
-                      builder: (context, double value, child) {
-                        return Transform.scale(
-                          scale: value,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFF6366F1),
-                                  const Color(0xFF8B5CF6),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(
-                                    0xFF6366F1,
-                                  ).withOpacity(0.4),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                // Animated text with typewriter effect
-                TweenAnimationBuilder(
-                  tween: Tween<double>(begin: 0, end: 1),
-                  duration: const Duration(milliseconds: 800),
-                  builder: (context, double value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 20 * (1 - value)),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Signing you in...',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: const Color(0xFF1A1A1A),
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Please wait a moment',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w400,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                // Animated dots indicator
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(3, (index) {
-                    return TweenAnimationBuilder(
-                      tween: Tween<double>(begin: 0.3, end: 1.0),
-                      duration: Duration(milliseconds: 400 + (index * 200)),
-                      builder: (context, double value, child) {
-                        return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Transform.scale(
-                            scale: value,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(
-                                  0xFF6366F1,
-                                ).withOpacity(value),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  }),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 40),
-
-          // Subtle hint text
-          TweenAnimationBuilder(
-            tween: Tween<double>(begin: 0, end: 1),
-            duration: const Duration(milliseconds: 1200),
-            builder: (context, double value, child) {
-              return Opacity(
-                opacity: value * 0.7,
-                child: Text(
-                  'Setting up your account securely',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[500],
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
       ),
     );
   }

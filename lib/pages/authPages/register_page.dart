@@ -8,6 +8,7 @@ import 'package:map_tracker/services/auth_service.dart';
 import 'package:map_tracker/services/navigation_service.dart';
 
 import '../../services/media_service.dart';
+import '../../widgets/login_reg_loading.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -90,7 +91,12 @@ class _RegisterPageState extends State<RegisterPage> {
               if (!isLoading) _registrationCard(),
               const SizedBox(height: 30),
               if (!isLoading) _loginButtonText(),
-              if (isLoading) _loadingSection(),
+              if (isLoading)
+                LoginRegLoading(
+                  title: 'Creating your account...',
+                  subtitle: 'Please wait a moment',
+                  hint: 'Setting up your account securely',
+                ),
             ],
           ),
         ),
@@ -608,48 +614,6 @@ class _RegisterPageState extends State<RegisterPage> {
             letterSpacing: 0.5,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _loadingSection() {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Creating your account...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

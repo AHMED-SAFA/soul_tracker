@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:map_tracker/services/auth_service.dart';
 import 'package:map_tracker/services/navigation_service.dart';
+
+import '../widgets/toast_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,15 +34,33 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () {
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+            onPressed: () async {
               try {
-                _authService.logout();
+                await _authService.logout();
+                if (!mounted) return;
+                ToastWidget.show(
+                  context: context,
+                  title: "Logged out successfully",
+                  subtitle: "See you soon!",
+                  iconColor: Colors.black,
+                  backgroundColor: Colors.green,
+                  icon: Icons.logout,
+                );
                 _navigationService.pushReplacementNamed("/login");
               } catch (e) {
-                print(e);
+                Fluttertoast.showToast(
+                  msg: 'Logout failed: $e',
+                  toastLength: Toast.LENGTH_LONG,
+                  gravity: ToastGravity.BOTTOM,
+                  backgroundColor: Colors.red,
+                  textColor: Colors.white,
+                  fontSize: 14.0,
+                );
+                debugPrint("Logout Error: $e");
               }
             },
-            icon: Icon(Icons.logout),
           ),
         ],
       ),
