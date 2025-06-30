@@ -350,11 +350,11 @@ class _LoginState extends State<Login> {
               Fluttertoast.showToast(
                 msg: 'Welcome back! Login successful',
                 toastLength: Toast.LENGTH_LONG, // ~3 seconds
-                gravity: ToastGravity.BOTTOM, // Position at bottom
-                backgroundColor: Colors.green, // Success color
+                gravity: ToastGravity.BOTTOM,
+                backgroundColor: Colors.green,
                 textColor: Colors.white,
                 fontSize: 14.0,
-                timeInSecForIosWeb: 3, // Explicitly set duration for iOS/Web
+                timeInSecForIosWeb: 3,
               );
               _navigationService.pushReplacementNamed("/home");
             } else {
@@ -398,18 +398,45 @@ class _LoginState extends State<Login> {
   }
 
   Widget _loadingSection() {
-    return SizedBox(
+    return Container(
       height: MediaQuery.of(context).size.height * 0.6,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.grey[50]!, Colors.grey[100]!],
+        ),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(32),
+          // Animated container with glassmorphism effect
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 1500),
+            curve: Curves.easeInOut,
+            padding: const EdgeInsets.all(40),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.9),
+                  Colors.white.withOpacity(0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
               boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withOpacity(0.1),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                  spreadRadius: -5,
+                ),
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
                   blurRadius: 20,
@@ -418,22 +445,171 @@ class _LoginState extends State<Login> {
               ],
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF070707)),
+                // Custom animated loading indicator
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Outer rotating circle
+                    TweenAnimationBuilder(
+                      tween: Tween<double>(begin: 0, end: 1),
+                      duration: const Duration(seconds: 2),
+                      builder: (context, double value, child) {
+                        return Transform.rotate(
+                          angle: value * 2 * 3.14159,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFF6366F1),
+                                  const Color(0xFF8B5CF6),
+                                  const Color(0xFF06B6D4),
+                                ],
+                              ),
+                            ),
+                            child: Container(
+                              margin: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Inner pulsing dot
+                    TweenAnimationBuilder(
+                      tween: Tween<double>(begin: 0.8, end: 1.2),
+                      duration: const Duration(milliseconds: 1000),
+                      builder: (context, double value, child) {
+                        return Transform.scale(
+                          scale: value,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFF6366F1),
+                                  const Color(0xFF8B5CF6),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF6366F1,
+                                  ).withOpacity(0.4),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
+
+                const SizedBox(height: 32),
+
+                // Animated text with typewriter effect
+                TweenAnimationBuilder(
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 800),
+                  builder: (context, double value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Signing you in...',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: const Color(0xFF1A1A1A),
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Please wait a moment',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
                 const SizedBox(height: 24),
-                Text(
-                  'Signing you in...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+
+                // Animated dots indicator
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    return TweenAnimationBuilder(
+                      tween: Tween<double>(begin: 0.3, end: 1.0),
+                      duration: Duration(milliseconds: 400 + (index * 200)),
+                      builder: (context, double value, child) {
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Transform.scale(
+                            scale: value,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(
+                                  0xFF6366F1,
+                                ).withOpacity(value),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
                 ),
               ],
             ),
+          ),
+
+          const SizedBox(height: 40),
+
+          // Subtle hint text
+          TweenAnimationBuilder(
+            tween: Tween<double>(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 1200),
+            builder: (context, double value, child) {
+              return Opacity(
+                opacity: value * 0.7,
+                child: Text(
+                  'Setting up your account securely',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

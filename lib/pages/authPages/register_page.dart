@@ -7,6 +7,8 @@ import 'package:get_it/get_it.dart';
 import 'package:map_tracker/services/auth_service.dart';
 import 'package:map_tracker/services/navigation_service.dart';
 
+import '../../services/media_service.dart';
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -16,40 +18,28 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   File? selectedImage;
+  late MediaService _mediaService;
+  late NavigationService _navigationService;
   String avatar =
       "https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=";
   final GetIt _getIt = GetIt.instance;
-  // late CloudService _cloudService;
-  // late MediaService _mediaService;
-  late NavigationService _navigationService;
   final GlobalKey<FormState> _regFormKey = GlobalKey();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   late AuthService _authService;
   String? email, password, name, department;
   bool isLoading = false;
   bool _isPasswordVisible = false;
-
-  // List of departments
-  final List<String> _departments_name_available = [
-    'CSE',
-    'EEE',
-    'ME',
-    'CE',
-    'BME',
-    'Arch',
-    'ECE',
-    'URP',
-  ];
 
   @override
   void initState() {
     super.initState();
     _authService = GetIt.I<AuthService>();
     _navigationService = _getIt.get<NavigationService>();
-    // _mediaService = _getIt.get<MediaService>();
-    // _cloudService = _getIt.get<CloudService>();
+    _mediaService = _getIt.get<MediaService>();
   }
 
   @override
@@ -160,7 +150,7 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 20),
               _buildPasswordField(),
               const SizedBox(height: 20),
-              _buildDepartmentDropdown(),
+              _buildConfirmPasswordField(),
               const SizedBox(height: 32),
               _registerButton(),
             ],
@@ -199,12 +189,47 @@ class _RegisterPageState extends State<RegisterPage> {
               right: 0,
               child: GestureDetector(
                 onTap: () async {
-                  // File? file = await _mediaService.getImageFromGallery();
-                  // if (file != null) {
-                  //   setState(() {
-                  //     selectedImage = file;
-                  //   });
-                  // }
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Select Profile Photo'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.photo_library),
+                              title: const Text('Choose from Gallery'),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                File? file = await _mediaService
+                                    .getImageFromGallery();
+                                if (file != null) {
+                                  setState(() {
+                                    selectedImage = file;
+                                  });
+                                }
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.photo_camera),
+                              title: const Text('Take Photo'),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                File? file = await _mediaService
+                                    .getImageFromCamera();
+                                if (file != null) {
+                                  setState(() {
+                                    selectedImage = file;
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
                 },
                 child: Container(
                   padding: const EdgeInsets.all(12),
@@ -250,8 +275,8 @@ class _RegisterPageState extends State<RegisterPage> {
       controller: _nameController,
       style: const TextStyle(fontSize: 16),
       decoration: InputDecoration(
-        labelText: 'Full Name',
-        hintText: 'Enter your full name',
+        labelText: 'User Name',
+        hintText: 'Enter your user name',
         prefixIcon: Container(
           margin: const EdgeInsets.all(12),
           child: const Icon(
@@ -353,7 +378,7 @@ class _RegisterPageState extends State<RegisterPage> {
       obscureText: !_isPasswordVisible,
       style: const TextStyle(fontSize: 16),
       decoration: InputDecoration(
-        labelText: 'Password',
+        labelText: 'Set Password',
         hintText: 'Enter your password',
         prefixIcon: Container(
           margin: const EdgeInsets.all(12),
@@ -412,21 +437,33 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildDepartmentDropdown() {
-    return DropdownButtonFormField<String>(
-      value: department,
-      style: const TextStyle(fontSize: 16, color: Colors.black),
-      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF6366F1)),
+  Widget _buildConfirmPasswordField() {
+    return TextFormField(
+      controller: _confirmPasswordController,
+      obscureText: !_isPasswordVisible,
+      style: const TextStyle(fontSize: 16),
       decoration: InputDecoration(
-        labelText: 'Department',
-        hintText: 'Select your department',
+        labelText: 'Confirm Password',
+        hintText: 'Match your password',
         prefixIcon: Container(
           margin: const EdgeInsets.all(12),
           child: const Icon(
-            Icons.school_outlined,
+            Icons.lock_reset_outlined,
             color: Color(0xFF000000),
             size: 20,
           ),
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            color: Colors.grey[600],
+            size: 22,
+          ),
+          onPressed: () {
+            setState(() {
+              _isPasswordVisible = !_isPasswordVisible;
+            });
+          },
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -453,20 +490,6 @@ class _RegisterPageState extends State<RegisterPage> {
         labelStyle: TextStyle(color: Colors.grey[600]),
         hintStyle: TextStyle(color: Colors.grey[400]),
       ),
-      items: _departments_name_available.map((String dept) {
-        return DropdownMenuItem<String>(value: dept, child: Text(dept));
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          department = value!;
-        });
-      },
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please select your department';
-        }
-        return null;
-      },
     );
   }
 
@@ -501,83 +524,64 @@ class _RegisterPageState extends State<RegisterPage> {
             try {
               email = _emailController.text;
               password = _passwordController.text;
+              String confirmPassword = _confirmPasswordController.text;
               name = _nameController.text;
-              String? selectedDepartment = department;
 
               // Firebase Authentication
               UserCredential userCredential = await _authService.register(
                 email!,
                 password!,
+                confirmPassword,
+                name: name,
               );
 
               String? userId = userCredential.user?.uid;
 
-              // Upload image to Firebase Storage
-              // String? imageUrl = await _mediaService.uploadImageToStorage(
-              //   selectedImage!,
-              //   userId!,
-              // );
-              //
-              // // Store user data in Firestore
-              // await _cloudService.storeUserData(
-              //   activeStatus: true,
-              //   userId: userId,
-              //   name: name!,
-              //   department: selectedDepartment!,
-              //   profileImageUrl: imageUrl,
-              // );
+              if (userId != null && selectedImage != null) {
+                // Upload profile image to Cloudinary
+                String profileImageUrl = await _mediaService
+                    .uploadProfileImageToCloudinary(selectedImage!, userId);
 
-              // Store user data in Realtime Database
-              // await _cloudService.storeUserDataInRealtimeDatabase(
-              //   userId: userId,
-              //   name: name!,
-              //   email: email!,
-              //   password: password!,
-              //   department: selectedDepartment,
-              // );
+                // Update user profile with image URL
+                await _authService.updateUserProfile(
+                  name: name,
+                  profileImageUrl: profileImageUrl,
+                );
 
-              // toastification.show(
-              //   context: context,
-              //   title: const Text(
-              //     'Account created successfully! Welcome to ChatN',
-              //   ),
-              //   type: ToastificationType.success,
-              //   style: ToastificationStyle.flat,
-              //   autoCloseDuration: const Duration(seconds: 3),
-              //   animationDuration: const Duration(milliseconds: 400),
-              //   alignment: Alignment.bottomCenter,
-              //   animationBuilder: (context, animation, alignment, child) {
-              //     return SlideTransition(
-              //       position:
-              //           Tween<Offset>(
-              //             begin: const Offset(0, 1.0), // Slide from bottom
-              //             end: Offset.zero,
-              //           ).animate(
-              //             CurvedAnimation(
-              //               parent: animation,
-              //               curve: Curves.easeOut,
-              //             ),
-              //           ),
-              //       child: FadeTransition(opacity: animation, child: child),
-              //     );
-              //   },
-              //   borderRadius: BorderRadius.circular(12),
-              //   showProgressBar: true,
-              //   backgroundColor: Colors.green.shade600,
-              //   foregroundColor: Colors.white,
-              // );
+                DelightToastBar(
+                  builder: (context) => const ToastCard(
+                    leading: Icon(
+                      Icons.check_circle,
+                      size: 28,
+                      color: Colors.green,
+                    ),
+                    title: Text(
+                      "Account created successfully!",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ).show(context);
+              }
+
               _navigationService.pushReplacementNamed("/home");
             } catch (error) {
+              print('Registration error: $error');
               DelightToastBar(
-                builder: (context) => const ToastCard(
-                  leading: Icon(
+                builder: (context) => ToastCard(
+                  leading: const Icon(
                     Icons.error_outline,
                     size: 28,
                     color: Colors.red,
                   ),
                   title: Text(
-                    "Registration failed. Please check your details and try again.",
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    "Registration failed: ${error.toString()}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ).show(context);

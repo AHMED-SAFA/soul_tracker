@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:map_tracker/pages/authPages/login_page.dart';
 import 'package:map_tracker/pages/authPages/register_page.dart';
+import 'package:map_tracker/pages/home_page.dart';
 
 class NavigationService {
   late GlobalKey<NavigatorState> _navigatorKey;
@@ -8,6 +9,7 @@ class NavigationService {
   final Map<String, Widget Function(BuildContext)> _routes = {
     "/login": (context) => const Login(),
     "/register": (context) => const RegisterPage(),
+    "/home": (context) => const HomePage(),
   };
 
   GlobalKey<NavigatorState>? get navigatorKey {
