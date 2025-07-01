@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:map_tracker/pages/authPages/login_page.dart';
 import 'package:map_tracker/pages/authPages/register_page.dart';
-import 'package:map_tracker/pages/home_page.dart';
+import 'package:map_tracker/pages/homePages/home_page.dart';
+import 'package:map_tracker/pages/homePages/user_profile.dart';
 
 class NavigationService {
   late GlobalKey<NavigatorState> _navigatorKey;
@@ -10,6 +11,7 @@ class NavigationService {
     "/login": (context) => const Login(),
     "/register": (context) => const RegisterPage(),
     "/home": (context) => const HomePage(),
+    "/profile": (context) => const UserProfile(),
   };
 
   GlobalKey<NavigatorState>? get navigatorKey {

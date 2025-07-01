@@ -56,7 +56,6 @@ class AuthService {
     String? name,
     String? profileImageUrl,
   }) async {
-    // Validate password confirmation
     if (password != confirmPassword) {
       throw FirebaseAuthException(
         code: 'passwords-do-not-match',
@@ -64,7 +63,6 @@ class AuthService {
       );
     }
 
-    // Validate password strength
     if (password.length < 6) {
       throw FirebaseAuthException(
         code: 'weak-password',
@@ -73,7 +71,6 @@ class AuthService {
     }
 
     try {
-      // Create user with Firebase Auth
       final credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -82,12 +79,10 @@ class AuthService {
       if (credential.user != null) {
         _user = credential.user;
 
-        // Update display name if provided
         if (name != null && name.isNotEmpty) {
           await credential.user!.updateDisplayName(name);
         }
 
-        // Save additional user data to Firestore
         await _saveUserDataToFirestore(
           uid: credential.user!.uid,
           email: email,
