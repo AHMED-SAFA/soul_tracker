@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get_it/get_it.dart';
-import '../../providers/user_provider.dart';
-import '../../services/auth_service.dart';
+import '../../../providers/user_provider.dart';
+import '../../../services/auth_service.dart';
 
 class UserProfile extends StatefulWidget {
   const UserProfile({super.key});

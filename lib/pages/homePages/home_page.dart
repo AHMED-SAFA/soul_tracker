@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
@@ -12,6 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../providers/device_record_provider.dart';
 import '../../providers/location_provider.dart';
+import '../../services/share_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,36 +31,107 @@ class _HomePageState extends State<HomePage> {
     _navigationService = _getIt.get<NavigationService>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showLocationPermissionDialog();
+      _handleStartupTasks();
     });
   }
 
-  Future<void> _showLocationPermissionDialog() async {
-    showDialog(
+  Future<void> _showGenerateCodeDialog() async {
+    final shareService = ShareService();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    try {
+      final code = await shareService.generateSharingCode();
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Sharing Code'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Share this code with others to track your location:'),
+              const SizedBox(height: 20),
+              Text(
+                code,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text('Valid for 2 hours'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('Error generating code: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _showEnterCodeDialog() async {
+    final shareService = ShareService();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final textController = TextEditingController();
+
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Location Access"),
-        content: const Text(
-          "This app wants to access your location to track your device.",
+        title: const Text('Enter Sharing Code'),
+        content: TextField(
+          controller: textController,
+          decoration: const InputDecoration(
+            hintText: 'Enter 6-digit code',
+            border: OutlineInputBorder(),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Deny"),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
+              final code = textController.text.trim();
+              if (code.isEmpty) return;
+
+              final validation = await shareService.validateSharingCode(code);
+              if (!mounted) return;
+
+              if (validation == null) {
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(content: Text('Invalid or expired code')),
+                );
+                return;
+              }
               Navigator.pop(context);
-              await _initializeTracking();
+
+              ToastWidget.show(
+                context: context,
+                title: "Code connected successfully!",
+                icon: Icons.done_all,
+                backgroundColor: Colors.greenAccent,
+                iconColor: Colors.black,
+              );
             },
-            child: const Text("Allow"),
+            child: const Text('Track'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _initializeTracking() async {
+  Future<void> _handleStartupTasks() async {
     final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
     final locationProvider = Provider.of<LocationProvider>(
       context,
@@ -70,20 +140,31 @@ class _HomePageState extends State<HomePage> {
 
     await deviceProvider.loadDeviceData();
     await locationProvider.requestPermission();
-    await locationProvider.fetchLocation();
 
-    final uid = _authService.user?.uid ?? "unknown";
+    if (locationProvider.locationGranted) {
+      await locationProvider.fetchLocation();
 
-    await FirebaseFirestore.instance.collection('devices').doc(uid).set({
-      'device_model': deviceProvider.deviceModel,
-      'os_version': deviceProvider.osVersion,
-      'ip_address': deviceProvider.ipAddress,
-      'location': {
-        'lat': locationProvider.position?.latitude,
-        'lng': locationProvider.position?.longitude,
-      },
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+      final uid = _authService.user?.uid ?? "unknown";
+      await FirebaseFirestore.instance.collection('devices').doc(uid).set({
+        'device_model': deviceProvider.deviceModel,
+        'os_version': deviceProvider.osVersion,
+        'ip_address': deviceProvider.ipAddress,
+        'location': {
+          'lat': locationProvider.position?.latitude,
+          'lng': locationProvider.position?.longitude,
+        },
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } else {
+      Fluttertoast.showToast(
+        msg: "Location permission is required for tracking.",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 14.0,
+      );
+    }
   }
 
   @override
@@ -98,33 +179,14 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () async {
-              try {
-                await _authService.logout();
-                if (!mounted) return;
-                ToastWidget.show(
-                  context: context,
-                  title: "Logged out successfully",
-                  subtitle: "See you soon!",
-                  iconColor: Colors.black,
-                  backgroundColor: Colors.green,
-                  icon: Icons.logout,
-                );
-                _navigationService.pushReplacementNamed("/login");
-              } catch (e) {
-                Fluttertoast.showToast(
-                  msg: 'Logout failed: $e',
-                  toastLength: Toast.LENGTH_LONG,
-                  gravity: ToastGravity.BOTTOM,
-                  backgroundColor: Colors.red,
-                  textColor: Colors.white,
-                  fontSize: 14.0,
-                );
-                debugPrint("Logout Error: $e");
-              }
-            },
+            icon: const Icon(Icons.qr_code),
+            tooltip: 'Enter tracking code',
+            onPressed: _showEnterCodeDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.share),
+            tooltip: 'Create location tracker code',
+            onPressed: _showGenerateCodeDialog,
           ),
         ],
       ),

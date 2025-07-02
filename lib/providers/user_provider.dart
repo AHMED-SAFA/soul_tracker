@@ -43,7 +43,7 @@ class UserProvider extends ChangeNotifier {
         name: name,
         profileImageUrl: profileImageUrl,
       );
-      await loadUserData(); // Reload data after update
+      await loadUserData();
     } catch (e) {
       _error = e.toString();
     } finally {

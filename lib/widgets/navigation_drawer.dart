@@ -24,6 +24,8 @@ class NavigationDrawerWidget extends StatelessWidget {
               style: TextStyle(color: Colors.white, fontSize: 24),
             ),
           ),
+
+          //home
           ListTile(
             leading: const Icon(Icons.home),
             title: const Text('Home'),
@@ -31,23 +33,29 @@ class NavigationDrawerWidget extends StatelessWidget {
               Navigator.pop(context);
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              // Add navigation to settings page
-            },
-          ),
+
+          // profile
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text('Profile'),
             onTap: () {
               _navigationService.pushNamed('/profile');
-              // Add navigation to profile page
             },
           ),
+
+          //settings
+          ListTile(
+            leading: const Icon(Icons.location_history),
+            title: const Text('Generated Codes'),
+            onTap: () {
+              Navigator.pop(context);
+              _navigationService.pushNamed("/generated_codes");
+            },
+          ),
+
           const Divider(),
+
+          // logout
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),
