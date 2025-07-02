@@ -32,6 +32,7 @@ dependencies:
 
   # Location tracking (foreground + background)
   geolocator: ^11.0.0
+  flutter_map: ^8.1.1
   location: ^5.0.3
   device_info_plus: ^11.5.0
 

@@ -13,7 +13,7 @@ class ShareService {
 
     final code = _generateRandomCode(8);
 
-    final expiryTime = DateTime.now().add(const Duration(minutes: 2));
+    final expiryTime = DateTime.now().add(const Duration(hours: 2));
 
     await _firestore.collection('shareCodes').doc(code).set({
       'userId': user?.uid,
@@ -42,7 +42,6 @@ class ShareService {
 
     final currentUser = _auth.currentUser;
 
-    // Track connectors
     final String ownerId = data['userId'];
     final String connectorId = currentUser?.uid ?? "";
 
@@ -55,6 +54,45 @@ class ShareService {
     }
 
     return {'userId': ownerId, 'code': code};
+  }
+
+  Future<List<Map<String, dynamic>>> getTrackingConnections() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return [];
+
+    final querySnapshot = await _firestore
+        .collection('shareCodes')
+        .where('connectors', arrayContains: currentUser.uid)
+        .where('isActive', isEqualTo: true)
+        .get();
+
+    List<Map<String, dynamic>> connections = [];
+
+    for (var doc in querySnapshot.docs) {
+      final data = doc.data();
+      final userId = data['userId'] as String;
+
+      // Get user details from devices collection
+      final deviceDoc = await _firestore
+          .collection('devices')
+          .doc(userId)
+          .get();
+
+      if (deviceDoc.exists) {
+        final deviceData = deviceDoc.data()!;
+        connections.add({
+          'userId': userId,
+          'code': doc.id,
+          'deviceModel': deviceData['device_model'] ?? 'Unknown',
+          'osVersion': deviceData['os_version'] ?? 'Unknown',
+          'ipAddress': deviceData['ip_address'] ?? 'Unknown',
+          'location': deviceData['location'] ?? {},
+          'timestamp': deviceData['timestamp'],
+        });
+      }
+    }
+
+    return connections;
   }
 
   Future<void> deactivateCode(String code) async {
