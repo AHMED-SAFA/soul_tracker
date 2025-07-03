@@ -12,6 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/device_record_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/share_service.dart';
+import '../mapPage/map_view_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -251,7 +252,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Track: ${connection['deviceModel']}',
+                      'Track: ${connection['name']}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -261,6 +262,7 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 const SizedBox(height: 8),
+                Text(connection['deviceModel']),
                 Text(connection['osVersion']),
                 if (location != null &&
                     location['lat'] != null &&
@@ -272,7 +274,29 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        if (location != null &&
+                            location['lat'] != null &&
+                            location['lng'] != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MapViewPage(
+                                lat: location['lat'],
+                                lng: location['lng'],
+                                deviceName:
+                                    connection['deviceModel'] ?? 'Unknown',
+                              ),
+                            ),
+                          );
+                        } else {
+                          Fluttertoast.showToast(
+                            msg: "Location not available for this device.",
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                          );
+                        }
+                      },
                       icon: const Icon(Icons.map),
                       label: const Text('View on Map'),
                     ),
@@ -310,7 +334,6 @@ class _HomePageState extends State<HomePage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Tracking connections section
             Container(
               padding: const EdgeInsets.all(16),
               child: Column(

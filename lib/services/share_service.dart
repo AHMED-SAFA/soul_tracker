@@ -62,7 +62,6 @@ class ShareService {
     final querySnapshot = await _firestore
         .collection('shareCodes')
         .where('connectors', arrayContains: currentUser.uid)
-        .where('isActive', isEqualTo: true)
         .get();
 
     List<Map<String, dynamic>> connections = [];
@@ -77,16 +76,19 @@ class ShareService {
           .doc(userId)
           .get();
 
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+
       if (deviceDoc.exists) {
         final deviceData = deviceDoc.data()!;
         connections.add({
           'userId': userId,
           'code': doc.id,
+          'name': userDoc['name'],
+          'profileImageUrl': userDoc['profileImageUrl'],
           'deviceModel': deviceData['device_model'] ?? 'Unknown',
           'osVersion': deviceData['os_version'] ?? 'Unknown',
           'ipAddress': deviceData['ip_address'] ?? 'Unknown',
           'location': deviceData['location'] ?? {},
-          'timestamp': deviceData['timestamp'],
         });
       }
     }

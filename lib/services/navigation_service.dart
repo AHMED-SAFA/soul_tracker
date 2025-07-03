@@ -14,6 +14,7 @@ class NavigationService {
     "/home": (context) => const HomePage(),
     "/profile": (context) => const UserProfile(),
     "/generated_codes": (context) => const GeneratedCodesPage(),
+    // "/map_view_page": (context) => const GeneratedCodesPage(),
   };
 
   GlobalKey<NavigatorState>? get navigatorKey {
