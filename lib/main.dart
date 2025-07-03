@@ -8,15 +8,11 @@ import 'package:map_tracker/services/auth_service.dart';
 import 'package:map_tracker/services/navigation_service.dart';
 import 'package:map_tracker/utils.dart';
 import 'package:provider/provider.dart';
-import 'package:background_fetch/background_fetch.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await setup();
-  BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);
   runApp(MyApp());
 }
 
@@ -24,32 +20,6 @@ Future<void> setup() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupFirebase();
   await registerServices();
-}
-
-void backgroundFetchHeadlessTask(HeadlessTask task) async {
-  final String taskId = task.taskId;
-  final bool timeout = task.timeout;
-
-  if (timeout) {
-    BackgroundFetch.finish(taskId);
-    return;
-  }
-
-  try {
-    WidgetsFlutterBinding.ensureInitialized();
-
-    final position = await Geolocator.getCurrentPosition();
-    final uid = GetIt.I.get<AuthService>().user?.uid ?? "unknown";
-
-    await FirebaseFirestore.instance.collection('devices').doc(uid).update({
-      'location': {'lat': position.latitude, 'lng': position.longitude},
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-  } catch (e) {
-    print("Background fetch error: $e");
-  }
-
-  BackgroundFetch.finish(taskId);
 }
 
 class MyApp extends StatefulWidget {
@@ -69,44 +39,6 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _navigationService = _getIt.get<NavigationService>();
     _authService = _getIt.get<AuthService>();
-    _configureBackgroundFetch();
-  }
-
-  void _configureBackgroundFetch() async {
-    BackgroundFetch.configure(
-      BackgroundFetchConfig(
-        minimumFetchInterval: 5,
-        stopOnTerminate: false,
-        enableHeadless: true,
-        requiresBatteryNotLow: false,
-        requiresCharging: false,
-        requiredNetworkType: NetworkType.ANY,
-      ),
-      (String taskId) async {
-        try {
-          final position = await Geolocator.getCurrentPosition();
-          final uid = _authService.user?.uid ?? "unknown";
-
-          await FirebaseFirestore.instance
-              .collection('devices')
-              .doc(uid)
-              .update({
-                'location': {
-                  'lat': position.latitude,
-                  'lng': position.longitude,
-                },
-                'timestamp': FieldValue.serverTimestamp(),
-              });
-        } catch (e) {
-          print("Foreground fetch error: $e");
-        }
-
-        BackgroundFetch.finish(taskId);
-      },
-      (String taskId) async {
-        BackgroundFetch.finish(taskId);
-      },
-    );
   }
 
   @override

@@ -8,7 +8,9 @@ import 'package:map_tracker/widgets/navigation_drawer.dart';
 import 'package:map_tracker/widgets/toast_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 
+import '../../controllers/refresh_controller.dart';
 import '../../providers/device_record_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/share_service.dart';
@@ -22,21 +24,35 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late NavigationService _navigationService;
   late AuthService _authService;
   final GetIt _getIt = GetIt.instance;
   List<Map<String, dynamic>> _trackingConnections = [];
+  List<StreamSubscription> _locationSubscriptions = [];
+  final RefreshController _refreshController = RefreshController();
 
   @override
   void initState() {
     super.initState();
     _authService = _getIt.get<AuthService>();
-    _navigationService = _getIt.get<NavigationService>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handleStartupTasks();
       _buildCardToTrack();
     });
+  }
+
+  @override
+  void dispose() {
+    _cancelLocationSubscriptions();
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  void _cancelLocationSubscriptions() {
+    for (var subscription in _locationSubscriptions) {
+      subscription.cancel();
+    }
+    _locationSubscriptions.clear();
   }
 
   Future<void> _handleStartupTasks() async {
@@ -207,6 +223,9 @@ class _HomePageState extends State<HomePage> {
                 backgroundColor: Colors.greenAccent,
                 iconColor: Colors.black,
               );
+
+              // Refresh connections after successful code entry
+              await _buildCardToTrack();
             },
             child: const Text('Track'),
           ),
@@ -219,9 +238,52 @@ class _HomePageState extends State<HomePage> {
     final shareService = ShareService();
     final connections = await shareService.getTrackingConnections();
 
+    _cancelLocationSubscriptions();
+
     setState(() {
       _trackingConnections = connections;
     });
+
+    _setupRealTimeListeners();
+  }
+
+  void _setupRealTimeListeners() {
+    for (int i = 0; i < _trackingConnections.length; i++) {
+      final connection = _trackingConnections[i];
+      final userId = connection['userId'] as String;
+
+      // Listen to device location updates
+      final subscription = FirebaseFirestore.instance
+          .collection('devices')
+          .doc(userId)
+          .snapshots()
+          .listen((snapshot) {
+            if (snapshot.exists && mounted) {
+              final data = snapshot.data()!;
+              setState(() {
+                _trackingConnections[i] = {
+                  ..._trackingConnections[i],
+                  'location': data['location'] ?? {},
+                  'timestamp': data['timestamp'],
+                };
+              });
+            }
+          });
+
+      _locationSubscriptions.add(subscription);
+    }
+  }
+
+  Future<void> _refreshData() async {
+    try {
+      await _buildCardToTrack();
+      _refreshController.refreshCompleted();
+    } catch (e) {
+      _refreshController.refreshFailed();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to refresh: ${e.toString()}')),
+      );
+    }
   }
 
   Widget _buildTrackingCards() {
@@ -260,14 +322,16 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 8),
                 Text(connection['deviceModel']),
                 Text(connection['osVersion']),
                 if (location != null &&
                     location['lat'] != null &&
                     location['lng'] != null)
-                  Text('Location: ${location['lat']}, ${location['lng']}'),
+                  Text(
+                    'Location: ${location['lat']}, ${location['lng']}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                 const SizedBox(height: 8),
                 const Divider(),
                 Row(
@@ -331,36 +395,36 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       drawer: const NavigationDrawerWidget(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Tracking Connections',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Tracking Connections',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.refresh),
-                        onPressed: _buildCardToTrack,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  _buildTrackingCards(),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _buildTrackingCards(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
