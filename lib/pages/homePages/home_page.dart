@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get_it/get_it.dart';
 import 'package:map_tracker/services/auth_service.dart';
-import 'package:map_tracker/services/navigation_service.dart';
 import 'package:map_tracker/widgets/navigation_drawer.dart';
-import 'package:map_tracker/widgets/toast_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
@@ -14,7 +12,9 @@ import '../../controllers/refresh_controller.dart';
 import '../../providers/device_record_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/share_service.dart';
+import '../../widgets/generate_code_widget.dart';
 import '../mapPage/map_view_page.dart';
+import '../../widgets/enter_code_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   late AuthService _authService;
   final GetIt _getIt = GetIt.instance;
   List<Map<String, dynamic>> _trackingConnections = [];
-  List<StreamSubscription> _locationSubscriptions = [];
+  final List<StreamSubscription> _locationSubscriptions = [];
   final RefreshController _refreshController = RefreshController();
 
   @override
@@ -91,149 +91,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _showGenerateCodeDialog() async {
-    final shareService = ShareService();
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    final proceed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Warning'),
-        content: const Text(
-          'By sharing this code, others will be able to track your location.\n\n'
-          'You can stop or modify tracking anytime later from the settings or tracking management screen.\n\n'
-          'Do you want to proceed?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-
-    if (proceed != true) return;
-
-    try {
-      final code = await shareService.generateSharingCode();
-      if (!mounted) return;
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Sharing Code'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Share this code with others to track your location:'),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      code,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.copy),
-                    tooltip: 'Copy Code',
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: code));
-                      scaffoldMessenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Code copied to clipboard'),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text('Valid for 2 hours'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text('Error generating code: ${e.toString()}')),
-      );
-    }
-  }
-
-  Future<void> _showEnterCodeDialog() async {
-    final shareService = ShareService();
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final textController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Enter Sharing Code'),
-        content: TextField(
-          controller: textController,
-          decoration: const InputDecoration(
-            hintText: 'Enter 6-digit code',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final code = textController.text.trim();
-              if (code.isEmpty) return;
-
-              final validation = await shareService.validateSharingCode(code);
-              if (!mounted) return;
-
-              if (validation == null) {
-                scaffoldMessenger.showSnackBar(
-                  const SnackBar(content: Text('Invalid or expired code')),
-                );
-                return;
-              }
-              Navigator.pop(context);
-
-              ToastWidget.show(
-                context: context,
-                title: "Code connected successfully!",
-                icon: Icons.done_all,
-                backgroundColor: Colors.greenAccent,
-                iconColor: Colors.black,
-              );
-
-              // Refresh connections after successful code entry
-              await _buildCardToTrack();
-            },
-            child: const Text('Track'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _buildCardToTrack() async {
     final shareService = ShareService();
     final connections = await shareService.getTrackingConnections();
@@ -252,7 +109,6 @@ class _HomePageState extends State<HomePage> {
       final connection = _trackingConnections[i];
       final userId = connection['userId'] as String;
 
-      // Listen to device location updates
       final subscription = FirebaseFirestore.instance
           .collection('devices')
           .doc(userId)
@@ -350,7 +206,11 @@ class _HomePageState extends State<HomePage> {
                                 lng: location['lng'],
                                 deviceName:
                                     connection['deviceModel'] ?? 'Unknown',
+                                name: connection['name'],
+                                userId: connection['userId'],
+                                profileImageUrl: connection['profileImageUrl'],
                               ),
+
                             ),
                           );
                         } else {
@@ -382,15 +242,17 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.amber,
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.qr_code),
-            tooltip: 'Enter tracking code',
-            onPressed: _showEnterCodeDialog,
-          ),
+          const EnterCodeButton(),
           IconButton(
             icon: const Icon(Icons.share),
             tooltip: 'Create location tracker code',
-            onPressed: _showGenerateCodeDialog,
+            onPressed: () {
+              final shareService = ShareService();
+              showGenerateCodeDialog(
+                context: context,
+                shareService: shareService,
+              );
+            },
           ),
         ],
       ),
