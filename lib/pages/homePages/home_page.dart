@@ -239,7 +239,6 @@ class _HomePageState extends State<HomePage> {
     return Column(
       children: _trackingConnections.map((connection) {
         final location = connection['location'] as Map<String, dynamic>?;
-        final timestamp = connection['timestamp'] as Timestamp?;
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -263,7 +262,6 @@ class _HomePageState extends State<HomePage> {
 
                 const SizedBox(height: 8),
                 Text(connection['osVersion']),
-                Text('IP: ${connection['ipAddress']}'),
                 if (location != null &&
                     location['lat'] != null &&
                     location['lng'] != null)
