@@ -31,6 +31,8 @@ class _GeneratedCodesPageState extends State<GeneratedCodesPage> {
     return Scaffold(
       appBar: const CustomAppBar(
         title: 'Generated Codes',
+        titleColor: Colors.black,
+        showBackButton: true,
         backgroundColor: Colors.white,
         showEnterCodeButton: false,
         showShareButton: false,

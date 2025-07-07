@@ -212,7 +212,6 @@ class _UserProfileState extends State<UserProfile>
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   children: [
-                    // Header section with profile picture
                     Container(
                       width: double.infinity,
                       decoration: const BoxDecoration(
