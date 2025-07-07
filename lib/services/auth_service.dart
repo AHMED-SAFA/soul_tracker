@@ -119,11 +119,11 @@ class AuthService {
       await _firestore.collection('users').doc(uid).set({
         'uid': uid,
         'email': email,
-        'name': name ?? '',
-        'dob': '',
-        'gender': '',
-        'address': '',
-        'profileImageUrl': profileImageUrl ?? '',
+        'name': name ?? "Not Set",
+        'dob': '' ?? "Not Set",
+        'gender': '' ?? "Not Set",
+        'address': '' ?? "Not Set",
+        'profileImageUrl': profileImageUrl ?? "Not Set",
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });

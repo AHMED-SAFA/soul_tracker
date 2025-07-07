@@ -11,6 +11,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showShareButton;
   final bool showBackButton;
   final Color backgroundColor;
+  final Color titleColor;
 
   const CustomAppBar({
     super.key,
@@ -19,6 +20,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showShareButton = true,
     this.showBackButton = true,
     this.backgroundColor = Colors.amber,
+    this.titleColor = Colors.black,
   });
 
   @override
@@ -26,7 +28,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final navigationService = GetIt.instance<NavigationService>();
 
     return AppBar(
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.w600,color: titleColor)),
       leading: showBackButton
           ? IconButton(
               icon: const Icon(Icons.arrow_back_ios_outlined),

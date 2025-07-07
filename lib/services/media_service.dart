@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
@@ -237,10 +238,55 @@ class MediaService {
     return null;
   }
 
-  // Show image picker options
+  // Show image picker options with dialog
   Future<File?> showImagePickerOptions() async {
-    // You can implement a dialog here to choose between camera and gallery
-    // For now, returning gallery picker
+    // This method can be used with a BuildContext to show a dialog
+    // For now, returning gallery picker as default
     return await getImageFromGallery();
+  }
+
+  // Show image picker dialog with context
+  Future<File?> showImagePickerDialog(BuildContext context) async {
+    return await showDialog<File?>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Image'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final file = await getImageFromGallery();
+                  if (context.mounted) {
+                    Navigator.pop(context, file);
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final file = await getImageFromCamera();
+                  if (context.mounted) {
+                    Navigator.pop(context, file);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
