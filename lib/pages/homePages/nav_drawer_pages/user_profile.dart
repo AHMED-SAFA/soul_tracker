@@ -14,6 +14,9 @@ class UserProfile extends StatefulWidget {
 class _UserProfileState extends State<UserProfile> {
   final AuthService _authService = GetIt.I<AuthService>();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   bool _isEditing = false;
 
   @override
@@ -27,6 +30,9 @@ class _UserProfileState extends State<UserProfile> {
   @override
   void dispose() {
     _nameController.dispose();
+    _dobController.dispose();
+    _genderController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -82,20 +88,32 @@ class _UserProfileState extends State<UserProfile> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.amber,
-                  backgroundImage:
-                      userData['profileImageUrl'] != null &&
-                          userData['profileImageUrl'].isNotEmpty
-                      ? NetworkImage(userData['profileImageUrl'])
-                      : null,
-                  child:
-                      userData['profileImageUrl'] == null ||
-                          userData['profileImageUrl'].isEmpty
-                      ? const Icon(Icons.person, size: 60, color: Colors.white)
-                      : null,
+                GestureDetector(
+                  onTap: _isEditing ? _pickImage : null,
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.amber,
+                    backgroundImage:
+                        userData['profileImageUrl'] != null &&
+                            userData['profileImageUrl'].isNotEmpty
+                        ? NetworkImage(userData['profileImageUrl'])
+                        : null,
+                    child:
+                        userData['profileImageUrl'] == null ||
+                            userData['profileImageUrl'].isEmpty
+                        ? const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
                 ),
+                if (_isEditing)
+                  TextButton(
+                    onPressed: _pickImage,
+                    child: const Text('Change Profile Picture'),
+                  ),
                 const SizedBox(height: 20),
                 Card(
                   child: Padding(
@@ -106,6 +124,31 @@ class _UserProfileState extends State<UserProfile> {
                           'Name',
                           userData['name'] ?? 'No name set',
                           Icons.person,
+                          controller: _nameController,
+                          isEditable: true,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildProfileField(
+                          'Date of Birth',
+                          userData['dob'] ?? 'Not set',
+                          Icons.calendar_month,
+                          controller: _dobController,
+                          isEditable: true,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildProfileField(
+                          'Gender',
+                          userData['gender'] ?? 'Not set',
+                          Icons.person_search,
+                          controller: _genderController,
+                          isEditable: true,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildProfileField(
+                          'Address',
+                          userData['address'] ?? 'Not set',
+                          Icons.location_history_sharp,
+                          controller: _addressController,
                           isEditable: true,
                         ),
                         const SizedBox(height: 16),
@@ -139,6 +182,7 @@ class _UserProfileState extends State<UserProfile> {
     String value,
     IconData icon, {
     bool isEditable = false,
+    TextEditingController? controller,
   }) {
     return Row(
       children: [
@@ -159,10 +203,11 @@ class _UserProfileState extends State<UserProfile> {
               const SizedBox(height: 4),
               if (_isEditing && isEditable)
                 TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
+                  controller: controller,
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
                     isDense: true,
+                    hintText: value,
                   ),
                 )
               else
@@ -186,13 +231,26 @@ class _UserProfileState extends State<UserProfile> {
       if (_isEditing) {
         final userData = context.read<UserProvider>().userData;
         _nameController.text = userData?['name'] ?? '';
+        _dobController.text = userData?['dob'] ?? '';
+        _genderController.text = userData?['gender'] ?? '';
+        _addressController.text = userData?['address'] ?? '';
       }
     });
+  }
+
+  Future<void> _pickImage() async {
+    // Implement image picking functionality
+    // You can use image_picker package for this
+    // After picking the image, upload it to Firebase Storage and get the URL
   }
 
   void _saveProfile() async {
     await context.read<UserProvider>().updateUserProfile(
       name: _nameController.text.trim(),
+      dob: _dobController.text.trim(),
+      gender: _genderController.text.trim(),
+      address: _addressController.text.trim(),
+      // profileImageUrl: [add the URL after uploading the image]
     );
 
     setState(() {

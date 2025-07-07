@@ -33,6 +33,9 @@ class UserProvider extends ChangeNotifier {
   Future<void> updateUserProfile({
     String? name,
     String? profileImageUrl,
+    String? dob,
+    String? gender,
+    String? address,
   }) async {
     _isLoading = true;
     _error = null;
@@ -42,6 +45,9 @@ class UserProvider extends ChangeNotifier {
       await _authService.updateUserProfile(
         name: name,
         profileImageUrl: profileImageUrl,
+        dob: dob,
+        gender: gender,
+        address: address,
       );
       await loadUserData();
     } catch (e) {

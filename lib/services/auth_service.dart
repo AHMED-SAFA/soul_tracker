@@ -112,7 +112,7 @@ class AuthService {
   Future<void> _saveUserDataToFirestore({
     required String uid,
     required String email,
-    String? name,
+    required String? name,
     String? profileImageUrl,
   }) async {
     try {
@@ -120,6 +120,9 @@ class AuthService {
         'uid': uid,
         'email': email,
         'name': name ?? '',
+        'dob': '',
+        'gender': '',
+        'address': '',
         'profileImageUrl': profileImageUrl ?? '',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -133,11 +136,13 @@ class AuthService {
   Future<void> updateUserProfile({
     String? name,
     String? profileImageUrl,
+    String? dob,
+    String? gender,
+    String? address,
   }) async {
     if (_user == null) return;
 
     try {
-      // Update display name in Firebase Auth
       if (name != null && name.isNotEmpty) {
         await _user!.updateDisplayName(name);
       }
@@ -146,6 +151,9 @@ class AuthService {
       await _firestore.collection('users').doc(_user!.uid).update({
         if (name != null) 'name': name,
         if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+        if (dob != null) 'dob': dob,
+        if (gender != null) 'gender': gender,
+        if (address != null) 'address': address,
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {

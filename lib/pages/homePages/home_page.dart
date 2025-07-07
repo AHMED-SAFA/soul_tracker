@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:get_it/get_it.dart';
-import 'package:map_tracker/services/auth_service.dart';
 import 'package:map_tracker/widgets/navigation_drawer.dart';
-import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
 import '../../controllers/refresh_controller.dart';
-import '../../providers/device_record_provider.dart';
-import '../../providers/location_provider.dart';
 import '../../services/share_service.dart';
-import '../../widgets/generate_code_widget.dart';
+import '../../widgets/custom_app_bar.dart';
 import '../mapPage/map_view_page.dart';
-import '../../widgets/enter_code_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,8 +17,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late AuthService _authService;
-  final GetIt _getIt = GetIt.instance;
   List<Map<String, dynamic>> _trackingConnections = [];
   final List<StreamSubscription> _locationSubscriptions = [];
   final RefreshController _refreshController = RefreshController();
@@ -33,10 +24,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _authService = _getIt.get<AuthService>();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleStartupTasks();
       _buildCardToTrack();
     });
   }
@@ -55,42 +43,6 @@ class _HomePageState extends State<HomePage> {
     _locationSubscriptions.clear();
   }
 
-  Future<void> _handleStartupTasks() async {
-    final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-    final locationProvider = Provider.of<LocationProvider>(
-      context,
-      listen: false,
-    );
-
-    await deviceProvider.loadDeviceData();
-    await locationProvider.requestPermission();
-
-    if (locationProvider.locationGranted) {
-      await locationProvider.fetchLocation();
-
-      final uid = _authService.user?.uid ?? "unknown";
-      await FirebaseFirestore.instance.collection('devices').doc(uid).set({
-        'device_model': deviceProvider.deviceModel,
-        'os_version': deviceProvider.osVersion,
-        'ip_address': deviceProvider.ipAddress,
-        'location': {
-          'lat': locationProvider.position?.latitude,
-          'lng': locationProvider.position?.longitude,
-        },
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } else {
-      Fluttertoast.showToast(
-        msg: "Location permission is required for tracking.",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 14.0,
-      );
-    }
-  }
-
   Future<void> _buildCardToTrack() async {
     final shareService = ShareService();
     final connections = await shareService.getTrackingConnections();
@@ -106,6 +58,7 @@ class _HomePageState extends State<HomePage> {
 
   void _setupRealTimeListeners() {
     for (int i = 0; i < _trackingConnections.length; i++) {
+
       final connection = _trackingConnections[i];
       final userId = connection['userId'] as String;
 
@@ -210,7 +163,6 @@ class _HomePageState extends State<HomePage> {
                                 userId: connection['userId'],
                                 profileImageUrl: connection['profileImageUrl'],
                               ),
-
                             ),
                           );
                         } else {
@@ -237,25 +189,12 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Soul Tracker"),
-        backgroundColor: Colors.amber,
-        centerTitle: true,
-        actions: [
-          const EnterCodeButton(),
-          IconButton(
-            icon: const Icon(Icons.share),
-            tooltip: 'Create location tracker code',
-            onPressed: () {
-              final shareService = ShareService();
-              showGenerateCodeDialog(
-                context: context,
-                shareService: shareService,
-              );
-            },
-          ),
-        ],
+      appBar: const CustomAppBar(
+        title: 'Soul Tracker',
+        backgroundColor: Colors.white,
+        showBackButton: false,
       ),
+
       drawer: const NavigationDrawerWidget(),
       body: RefreshIndicator(
         onRefresh: _refreshData,

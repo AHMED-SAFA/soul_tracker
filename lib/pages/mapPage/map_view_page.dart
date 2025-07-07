@@ -54,7 +54,6 @@ class _MapViewPageState extends State<MapViewPage> {
           if (snapshot.exists && mounted) {
             final data = snapshot.data()!;
             final location = data['location'] as Map<String, dynamic>?;
-            final timestamp = data['timestamp'] as Timestamp?;
 
             if (location != null &&
                 location['lat'] != null &&
@@ -89,7 +88,6 @@ class _MapViewPageState extends State<MapViewPage> {
         ),
         backgroundColor: const Color(0xFF1565C0),
         elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.1),
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location, color: Colors.black),
@@ -122,9 +120,9 @@ class _MapViewPageState extends State<MapViewPage> {
                     point: _currentPosition,
                     child: Container(
                       child: const Icon(
-                        Icons.person_pin_circle,
+                        Icons.person_pin_circle_outlined,
                         color: Color(0xFF1565C0),
-                        size: 45,
+                        size: 50,
                       ),
                     ),
                   ),

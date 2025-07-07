@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../services/share_service.dart';
+import '../../../widgets/custom_app_bar.dart';
 
 class GeneratedCodesPage extends StatefulWidget {
   const GeneratedCodesPage({super.key});
@@ -28,7 +29,12 @@ class _GeneratedCodesPageState extends State<GeneratedCodesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Generated Codes')),
+      appBar: const CustomAppBar(
+        title: 'Generated Codes',
+        backgroundColor: Colors.white,
+        showEnterCodeButton: false,
+        showShareButton: false,
+      ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _futureCodes,
         builder: (context, snapshot) {
