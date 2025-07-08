@@ -54,33 +54,83 @@ class _MyAppState extends State<MyApp> {
       listen: false,
     );
 
+    // Load device data
     await deviceProvider.loadDeviceData();
+
+    // If user is already logged in, start location tracking immediately
+    if (_authService.user != null) {
+      await _initializeLocationTracking(deviceProvider, locationProvider);
+    }
+  }
+
+  Future<void> _initializeLocationTracking(
+    DeviceProvider deviceProvider,
+    LocationProvider locationProvider,
+  ) async {
+    // Request location permission and start tracking
     await locationProvider.requestPermission();
 
     if (locationProvider.locationGranted) {
+      // Get initial location
       await locationProvider.fetchLocation();
 
+      // Create or update device record in database
+      await _updateDeviceRecord(deviceProvider, locationProvider);
+
+      // Start continuous tracking
+      if (!locationProvider.isTracking) {
+        await locationProvider.startLocationTracking();
+      }
+    } else {
+      _showLocationPermissionError();
+    }
+  }
+
+  Future<void> _updateDeviceRecord(
+    DeviceProvider deviceProvider,
+    LocationProvider locationProvider,
+  ) async {
+    try {
       final uid = _authService.user?.uid ?? "unknown";
-      await FirebaseFirestore.instance.collection('devices').doc(uid).set({
+
+      final Map<String, dynamic> deviceData = {
         'device_model': deviceProvider.deviceModel,
         'os_version': deviceProvider.osVersion,
         'ip_address': deviceProvider.ipAddress,
-        'location': {
-          'lat': locationProvider.position?.latitude,
-          'lng': locationProvider.position?.longitude,
-        },
         'timestamp': FieldValue.serverTimestamp(),
-      });
-    } else {
-      Fluttertoast.showToast(
-        msg: "Location permission is required for tracking.",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 14.0,
-      );
+        'last_updated': DateTime.now().toIso8601String(),
+      };
+
+      if (locationProvider.position != null) {
+        deviceData['location'] = {
+          'lat': locationProvider.position!.latitude,
+          'lng': locationProvider.position!.longitude,
+          'accuracy': locationProvider.position!.accuracy,
+          'speed': locationProvider.position!.speed,
+          'heading': locationProvider.position!.heading,
+        };
+      }
+
+      await FirebaseFirestore.instance
+          .collection('devices')
+          .doc(uid)
+          .set(deviceData, SetOptions(merge: true));
+
+      debugPrint('Device record updated successfully');
+    } catch (e) {
+      debugPrint('Failed to update device record: $e');
     }
+  }
+
+  void _showLocationPermissionError() {
+    Fluttertoast.showToast(
+      msg: "Location permission is required for tracking.",
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 14.0,
+    );
   }
 
   @override

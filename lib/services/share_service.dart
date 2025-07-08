@@ -70,7 +70,6 @@ class ShareService {
       final data = doc.data();
       final userId = data['userId'] as String;
 
-      // Get user details from devices collection
       final deviceDoc = await _firestore
           .collection('devices')
           .doc(userId)

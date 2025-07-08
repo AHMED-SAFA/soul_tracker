@@ -7,6 +7,7 @@ import 'package:get_it/get_it.dart';
 import 'package:map_tracker/services/auth_service.dart';
 import 'package:map_tracker/services/navigation_service.dart';
 
+import '../../services/devic_tracking_service.dart';
 import '../../services/media_service.dart';
 import '../../widgets/login_reg_loading.dart';
 
@@ -21,6 +22,7 @@ class _RegisterPageState extends State<RegisterPage> {
   File? selectedImage;
   late MediaService _mediaService;
   late NavigationService _navigationService;
+  late DeviceTrackingService _deviceTrackingService;
   String avatar =
       "https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=";
   final GetIt _getIt = GetIt.instance;
@@ -40,6 +42,7 @@ class _RegisterPageState extends State<RegisterPage> {
     super.initState();
     _authService = GetIt.I<AuthService>();
     _navigationService = _getIt.get<NavigationService>();
+    _deviceTrackingService = _getIt.get<DeviceTrackingService>();
     _mediaService = _getIt.get<MediaService>();
   }
 
@@ -533,12 +536,19 @@ class _RegisterPageState extends State<RegisterPage> {
               String confirmPassword = _confirmPasswordController.text;
               name = _nameController.text;
 
+              // Load device data (model, OS version, IP address)
+              await _deviceTrackingService.loadDeviceData();
+
+              // Request location permissions (if needed)
+              await _deviceTrackingService.requestLocationPermission();
+
               // Firebase Authentication
               UserCredential userCredential = await _authService.register(
                 email!,
                 password!,
                 confirmPassword,
                 name: name,
+                isActive: true,
               );
 
               String? userId = userCredential.user?.uid;
@@ -553,6 +563,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   name: name,
                   profileImageUrl: profileImageUrl,
                 );
+
+                // Update device record in Firestore after successful registration
+                await _deviceTrackingService.updateDeviceRecord();
+
+                // Start continuous location tracking (if permission granted)
+                if (_deviceTrackingService.locationGranted) {
+                  await _deviceTrackingService.startLocationTracking();
+                }
 
                 DelightToastBar(
                   builder: (context) => const ToastCard(

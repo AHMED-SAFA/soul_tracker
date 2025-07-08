@@ -351,32 +351,48 @@ class _LoginState extends State<Login> {
             setState(() {
               isLoading = true;
             });
-            email = _emailController.text;
-            password = _passwordController.text;
-            bool success = await _authService.login(email!, password!);
-            if (success) {
 
+            try {
+              email = _emailController.text;
+              password = _passwordController.text;
+
+              bool success = await _authService.login(email!, password!);
+
+              if (success) {
+                ToastWidget.show(
+                  context: context,
+                  title: "Welcome back! Login successful",
+                  iconColor: Colors.black,
+                  backgroundColor: Colors.green,
+                );
+
+                if (!context.mounted) return;
+                _navigationService.pushReplacementNamed("/home");
+              } else {
+                ToastWidget.show(
+                  context: context,
+                  title:
+                      "Login failed. Please check your credentials and try again.",
+                  icon: Icons.error_outline,
+                  iconColor: Colors.black,
+                  backgroundColor: Color(0xFFF84949),
+                );
+              }
+            } catch (e) {
+              debugPrint("Login error: $e");
               ToastWidget.show(
                 context: context,
-                title:
-                "Welcome back! Login successful",
-                iconColor: Colors.black,
-                backgroundColor: Colors.green,
-              );
-              _navigationService.pushReplacementNamed("/home");
-            } else {
-              setState(() {
-                isLoading = false;
-              });
-
-              ToastWidget.show(
-                context: context,
-                title:
-                    "Login failed. Please check your credentials and try again.",
+                title: "Login failed: ${e.toString()}",
                 icon: Icons.error_outline,
                 iconColor: Colors.black,
                 backgroundColor: Color(0xFFF84949),
               );
+            } finally {
+              if (mounted) {
+                setState(() {
+                  isLoading = false;
+                });
+              }
             }
           }
         },
@@ -388,14 +404,23 @@ class _LoginState extends State<Login> {
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child: const Text(
-          "Sign In",
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text(
+                "Sign In",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
       ),
     );
   }

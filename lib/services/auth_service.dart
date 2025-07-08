@@ -24,23 +24,37 @@ class AuthService {
 
   Future<bool> login(String email, String password) async {
     try {
-      final credencial = await _firebaseAuth.signInWithEmailAndPassword(
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      if (credencial.user != null) {
-        _user = credencial.user;
+
+      if (credential.user != null) {
+        _user = credential.user;
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_user!.uid)
+            .update({
+              'isActive': true,
+              'lastLogin': FieldValue.serverTimestamp(),
+            });
+
         return true;
       }
     } catch (e) {
-      print(e);
+      print('Login error: $e');
     }
     return false;
   }
 
-  Future<bool> logout() async {
+  Future<bool> logout(String uid) async {
     try {
       await _firebaseAuth.signOut();
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'isActive': false,
+      });
       _user = null;
       return true;
     } catch (e) {
@@ -55,6 +69,7 @@ class AuthService {
     String confirmPassword, {
     String? name,
     String? profileImageUrl,
+    required bool isActive,
   }) async {
     if (password != confirmPassword) {
       throw FirebaseAuthException(
@@ -88,6 +103,7 @@ class AuthService {
           email: email,
           name: name,
           profileImageUrl: profileImageUrl,
+          isActive: true,
         );
 
         return credential;
@@ -114,6 +130,7 @@ class AuthService {
     required String email,
     required String? name,
     String? profileImageUrl,
+    required bool isActive,
   }) async {
     try {
       await _firestore.collection('users').doc(uid).set({
@@ -126,6 +143,7 @@ class AuthService {
         'profileImageUrl': profileImageUrl ?? "Not Set",
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
+        'isActive': isActive,
       });
     } catch (e) {
       print('Error saving user data to Firestore: $e');

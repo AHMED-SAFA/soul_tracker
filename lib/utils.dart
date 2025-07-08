@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get_it/get_it.dart';
 import 'package:map_tracker/services/auth_service.dart';
+import 'package:map_tracker/services/devic_tracking_service.dart';
 import 'package:map_tracker/services/media_service.dart';
 import 'package:map_tracker/services/navigation_service.dart';
 
@@ -18,4 +19,6 @@ Future<void> registerServices() async {
   getIt.registerSingleton<NavigationService>(NavigationService());
 
   getIt.registerSingleton<MediaService>(MediaService());
+
+  getIt.registerSingleton<DeviceTrackingService>(DeviceTrackingService());
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get_it/get_it.dart';
+import 'package:map_tracker/services/auth_service.dart';
 import 'package:map_tracker/widgets/navigation_drawer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
@@ -20,8 +22,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   List<Map<String, dynamic>> _trackingConnections = [];
   final List<StreamSubscription> _locationSubscriptions = [];
   final RefreshController _refreshController = RefreshController();
+  String avatar =
+      "https://media.istockphoto.com/id/1300845620/vector/user-icon-flat-isolated-on-white-background-user-symbol-vector-illustration.jpg?s=612x612&w=0&k=20&c=yBeyba0hUkh14_jgv1OKqIH0CCSWU_4ckRkAoy2p73o=";
   late AnimationController _fadeController;
   late AnimationController _slideController;
+  final AuthService _authService = GetIt.I<AuthService>();
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
@@ -78,10 +83,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final shareService = ShareService();
     final connections = await shareService.getTrackingConnections();
 
+    // Enhance connections with initial isActive status
+    final enhancedConnections = await Future.wait(
+      connections.map((connection) async {
+        final userData = await _authService.getUserData(connection['userId']);
+        return {...connection, 'isActive': userData?['isActive'] ?? false};
+      }),
+    );
+
     _cancelLocationSubscriptions();
 
     setState(() {
-      _trackingConnections = connections;
+      _trackingConnections = enhancedConnections;
     });
 
     _setupRealTimeListeners();
@@ -92,7 +105,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       final connection = _trackingConnections[i];
       final userId = connection['userId'] as String;
 
-      final subscription = FirebaseFirestore.instance
+      // Listen to device location updates
+      final deviceSubscription = FirebaseFirestore.instance
           .collection('devices')
           .doc(userId)
           .snapshots()
@@ -109,7 +123,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             }
           });
 
-      _locationSubscriptions.add(subscription);
+      // Listen to user status updates
+      final userSubscription = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .snapshots()
+          .listen((snapshot) {
+            if (snapshot.exists && mounted) {
+              setState(() {
+                _trackingConnections[i] = {
+                  ..._trackingConnections[i],
+                  'isActive': snapshot.data()?['isActive'] ?? false,
+                };
+              });
+            }
+          });
+
+      _locationSubscriptions.add(deviceSubscription);
+      _locationSubscriptions.add(userSubscription);
     }
   }
 
@@ -187,50 +218,167 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     return Column(
       children: _trackingConnections.asMap().entries.map((entry) {
-        final index = entry.key;
         final connection = entry.value;
+        final String? photoUrl = connection['profileImageUrl'] ?? "null";
         final location = connection['location'] as Map<String, dynamic>?;
+        final String userId = connection['userId'];
 
-        return AnimatedBuilder(
-          animation: _slideAnimation,
-          builder: (context, child) {
-            return SlideTransition(
-              position: _slideAnimation,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Colors.white, const Color(0xFFF8F9FA)],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1A237E).withOpacity(0.1),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+        return FutureBuilder<Map<String, dynamic>?>(
+          future: _authService.getUserData(userId),
+          builder: (context, snapshot) {
+            final isActive = snapshot.data?['isActive'] ?? false;
+
+            return AnimatedBuilder(
+              animation: _slideAnimation,
+              builder: (context, child) {
+                return SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                    ],
-                    border: Border.all(
-                      color: const Color(0xFF1A237E).withOpacity(0.1),
-                      width: 1,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.white, const Color(0xFFF8F9FA)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF1A237E).withOpacity(0.1),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: const Color(0xFF1A237E).withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Row(
+                              children: [
+                                ClipOval(
+                                  child: Image.network(
+                                    (photoUrl != null && photoUrl.isNotEmpty)
+                                        ? photoUrl
+                                        : avatar,
+                                    width: 58,
+                                    height: 58,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        connection['name'] ?? 'Unknown',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1A237E),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        connection['deviceModel'] ??
+                                            'Unknown Device',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: const Color(
+                                            0xFF37474F,
+                                          ).withOpacity(0.7),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? const Color(
+                                            0xFF4CAF50,
+                                          ).withOpacity(0.1)
+                                        : const Color(
+                                            0xFFFF9800,
+                                          ).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isActive
+                                            ? Icons.location_on
+                                            : Icons.location_off,
+                                        size: 16,
+                                        color: isActive
+                                            ? const Color(0xFF4CAF50)
+                                            : const Color(0xFFFF9800),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        isActive ? 'Online' : 'Offline',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isActive
+                                              ? const Color(0xFF4CAF50)
+                                              : const Color(0xFFFF9800),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
                             Container(
                               padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF37474F,
+                                ).withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.smartphone,
+                                    size: 16,
+                                    color: Color(0xFF37474F),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    connection['osVersion'] ?? 'Unknown OS',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF37474F),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              width: double.infinity,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [
@@ -240,170 +388,69 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(
-                                Icons.person_pin_circle_outlined,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    connection['name'] ?? 'Unknown',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1A237E),
-                                    ),
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    connection['deviceModel'] ??
-                                        'Unknown Device',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: const Color(
-                                        0xFF37474F,
-                                      ).withOpacity(0.7),
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    location != null &&
-                                        location['lat'] != null &&
-                                        location['lng'] != null
-                                    ? const Color(0xFF4CAF50).withOpacity(0.1)
-                                    : const Color(0xFFFF9800).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    location != null &&
-                                            location['lat'] != null &&
-                                            location['lng'] != null
-                                        ? Icons.location_on
-                                        : Icons.location_off,
-                                    size: 16,
-                                    color:
-                                        location != null &&
-                                            location['lat'] != null &&
-                                            location['lng'] != null
-                                        ? const Color(0xFF4CAF50)
-                                        : const Color(0xFFFF9800),
+                                ),
+                                onPressed: () {
+                                  if (location != null &&
+                                      location['lat'] != null &&
+                                      location['lng'] != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => MapViewPage(
+                                          lat: location['lat'],
+                                          lng: location['lng'],
+                                          deviceName:
+                                              connection['deviceModel'] ??
+                                              'Unknown',
+                                          name: connection['name'],
+                                          userId: connection['userId'],
+                                          profileImageUrl:
+                                              connection['profileImageUrl'],
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    Fluttertoast.showToast(
+                                      msg:
+                                          "Location not available for this device.",
+                                      toastLength: Toast.LENGTH_SHORT,
+                                      gravity: ToastGravity.BOTTOM,
+                                      backgroundColor: const Color(0xFFFF9800),
+                                    );
+                                  }
+                                },
+                                icon: const Icon(
+                                  Icons.map_outlined,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                label: const Text(
+                                  'View on Map',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF37474F).withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.smartphone,
-                                size: 16,
-                                color: Color(0xFF37474F),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                connection['osVersion'] ?? 'Unknown OS',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF37474F),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: () {
-                              if (location != null &&
-                                  location['lat'] != null &&
-                                  location['lng'] != null) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => MapViewPage(
-                                      lat: location['lat'],
-                                      lng: location['lng'],
-                                      deviceName:
-                                          connection['deviceModel'] ??
-                                          'Unknown',
-                                      name: connection['name'],
-                                      userId: connection['userId'],
-                                      profileImageUrl:
-                                          connection['profileImageUrl'],
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                Fluttertoast.showToast(
-                                  msg:
-                                      "Location not available for this device.",
-                                  toastLength: Toast.LENGTH_SHORT,
-                                  gravity: ToastGravity.BOTTOM,
-                                  backgroundColor: const Color(0xFFFF9800),
-                                );
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.map_outlined,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            label: const Text(
-                              'View on Map',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           },
         );

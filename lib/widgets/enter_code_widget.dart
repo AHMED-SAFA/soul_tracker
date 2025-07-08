@@ -95,7 +95,7 @@ class EnterCodeButton extends StatelessWidget {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Enter the 6-digit tracking code shared with you',
+                            'Enter the 8-digit tracking code shared with you',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16,
@@ -123,11 +123,11 @@ class EnterCodeButton extends StatelessWidget {
                       child: TextField(
                         controller: textController,
                         textAlign: TextAlign.center,
-                        maxLength: 6,
+                        maxLength: 8,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 8,
+                          letterSpacing: 5,
                           color: Color(0xFF4A90E2),
                           fontFamily: 'monospace',
                         ),
@@ -145,11 +145,12 @@ class EnterCodeButton extends StatelessWidget {
                             vertical: 20,
                           ),
                           prefixIcon: const Icon(
-                            Icons.pin,
+                            Icons.text_fields,
                             color: Color(0xFF4A90E2),
                           ),
                         ),
-                        keyboardType: TextInputType.number,
+                        keyboardType: TextInputType.text,
+                        textCapitalization: TextCapitalization.characters,
                         textInputAction: TextInputAction.done,
                       ),
                     ),

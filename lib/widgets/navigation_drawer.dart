@@ -5,6 +5,7 @@ import 'package:map_tracker/services/navigation_service.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
+import 'common_alert_dialog.dart';
 import 'toast_widget.dart';
 import '../../providers/user_provider.dart';
 
@@ -316,29 +317,51 @@ class _NavigationDrawerWidgetState extends State<NavigationDrawerWidget> {
   }
 
   Future<void> _handleLogout() async {
-    Navigator.pop(context);
-    try {
-      await _authService.logout();
-      if (!context.mounted) return;
-      ToastWidget.show(
-        context: context,
-        title: "Logged out successfully",
-        subtitle: "See you soon!",
-        iconColor: Colors.black,
-        backgroundColor: Colors.green,
-        icon: Icons.logout,
-      );
-      _navigationService.pushReplacementNamed("/login");
-    } catch (e) {
-      Fluttertoast.showToast(
-        msg: 'Logout failed: $e',
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 14.0,
-      );
-      debugPrint("Logout Error: $e");
-    }
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => CommonAlertDialog(
+        title: "Exit App?",
+        backgroundColor: Color(0xff7f0505),
+        subtitle: "Are you sure you want to exit the application?",
+        icon: Icons.warning_amber_rounded,
+        okButtonText: "Exit",
+        cancelButtonText: "Cancel",
+        onOkButtonTap: () async {
+          Navigator.pop(context);
+          try {
+            // Get the current user ID before logging out
+            final String? uid = _authService.currentUserId;
+
+            // Perform logout with the UID
+            await _authService.logout(uid ?? '');
+
+            if (!context.mounted) return;
+            ToastWidget.show(
+              context: context,
+              title: "Logged out successfully",
+              subtitle: "See you soon!",
+              iconColor: Colors.black,
+              backgroundColor: Colors.green,
+              icon: Icons.logout,
+            );
+            _navigationService.pushReplacementNamed("/login");
+          } catch (e) {
+            Fluttertoast.showToast(
+              msg: 'Logout failed: $e',
+              toastLength: Toast.LENGTH_LONG,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Colors.red,
+              textColor: Colors.white,
+              fontSize: 14.0,
+            );
+            debugPrint("Logout Error: $e");
+          }
+        },
+        onCancelButtonTap: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
   }
 }
