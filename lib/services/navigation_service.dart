@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:map_tracker/pages/authPages/login_page.dart';
 import 'package:map_tracker/pages/authPages/register_page.dart';
 import 'package:map_tracker/pages/homePages/home_page.dart';
-import 'package:map_tracker/pages/homePages/nav_drawer_pages/generated_codes_page.dart';
+import 'package:map_tracker/pages/homePages/nav_drawer_pages/code_settings.dart';
 import 'package:map_tracker/pages/homePages/nav_drawer_pages/user_profile.dart';
 
 class NavigationService {
