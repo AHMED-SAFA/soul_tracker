@@ -66,7 +66,17 @@ class ConnectorController {
       await _firestore.collection('shareCodes').doc(code).update({
         'connectors': FieldValue.arrayRemove([connectorId]),
       });
+    } catch (e) {
+      print('Error deleting connector: $e');
+      throw e;
+    }
+  }
 
+  Future<void> deleteGeneratedCode({
+    required String code,
+  }) async {
+    try {
+      await _firestore.collection('shareCodes').doc(code).delete();
     } catch (e) {
       print('Error deleting connector: $e');
       throw e;
