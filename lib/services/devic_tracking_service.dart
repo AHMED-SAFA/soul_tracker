@@ -69,7 +69,6 @@ class DeviceTrackingService {
     await fetchIpAddress();
   }
 
-  // Location methods
   Future<void> requestLocationPermission() async {
     bool serviceEnabled;
     LocationPermission permission;

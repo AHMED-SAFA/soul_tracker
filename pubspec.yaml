@@ -52,6 +52,9 @@ dependencies:
   # State management
   provider: ^6.1.2
 
+  # Share
+#  share_plus: ^11.2.1
+
   # JSON serialization
   json_annotation: ^4.9.0
 

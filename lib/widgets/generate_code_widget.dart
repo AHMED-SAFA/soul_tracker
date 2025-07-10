@@ -12,9 +12,7 @@ Future<void> showGenerateCodeDialog({
     context: context,
     barrierDismissible: false,
     builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -27,11 +25,7 @@ Future<void> showGenerateCodeDialog({
         ),
         child: const Row(
           children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
+            Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28),
             SizedBox(width: 12),
             Text(
               'Privacy Warning',
@@ -59,11 +53,7 @@ Future<void> showGenerateCodeDialog({
               ),
               child: const Column(
                 children: [
-                  Icon(
-                    Icons.location_on,
-                    color: Color(0xFF4A90E2),
-                    size: 40,
-                  ),
+                  Icon(Icons.location_on, color: Color(0xFF4A90E2), size: 40),
                   SizedBox(height: 12),
                   Text(
                     'By sharing this code, others will be able to track your location in real-time.',
@@ -87,19 +77,12 @@ Future<void> showGenerateCodeDialog({
               ),
               child: const Row(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Color(0xFF4A90E2),
-                    size: 20,
-                  ),
+                  Icon(Icons.info_outline, color: Color(0xFF4A90E2), size: 20),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'You can stop or modify tracking anytime from settings.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.black87),
                     ),
                   ),
                 ],
@@ -171,9 +154,7 @@ Future<void> showGenerateCodeDialog({
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -186,11 +167,7 @@ Future<void> showGenerateCodeDialog({
           ),
           child: const Row(
             children: [
-              Icon(
-                Icons.share_location,
-                color: Colors.white,
-                size: 28,
-              ),
+              Icon(Icons.share_location, color: Colors.white, size: 28),
               SizedBox(width: 12),
               Text(
                 'Sharing Code',
@@ -232,64 +209,35 @@ Future<void> showGenerateCodeDialog({
                 ),
                 child: Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            code,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF4A90E2),
-                              letterSpacing: 4,
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(left: 12),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.content_copy, color: Colors.white),
-                            tooltip: 'Copy Code',
-                            onPressed: () async {
-                              await Clipboard.setData(ClipboardData(text: code));
-                              scaffoldMessenger.showSnackBar(
-                                SnackBar(
-                                  content: const Row(
-                                    children: [
-                                      Icon(Icons.check_circle, color: Colors.white),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Code copied to clipboard',
-                                        style: TextStyle(fontWeight: FontWeight.w500),
-                                      ),
-                                    ],
-                                  ),
-                                  backgroundColor: Colors.green,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                    // Code display
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Text(
+                        code,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF4A90E2),
+                          letterSpacing: 4,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Validity info
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange.shade50,
                         borderRadius: BorderRadius.circular(8),
@@ -298,11 +246,7 @@ Future<void> showGenerateCodeDialog({
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.schedule,
-                            color: Colors.orange,
-                            size: 16,
-                          ),
+                          Icon(Icons.schedule, color: Colors.orange, size: 16),
                           SizedBox(width: 6),
                           Text(
                             'Valid for 2 hours',
@@ -314,6 +258,79 @@ Future<void> showGenerateCodeDialog({
                           ),
                         ],
                       ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Copy buttons
+                    Row(
+                      children: [
+                        // Copy button
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF28A745), Color(0xFF20C997)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: TextButton.icon(
+                              onPressed: () async {
+                                await Clipboard.setData(
+                                  ClipboardData(text: code),
+                                );
+                                scaffoldMessenger.showSnackBar(
+                                  SnackBar(
+                                    content: const Row(
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Code copied to clipboard',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.green,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.content_copy,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              label: const Text(
+                                'Copy',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -370,9 +387,7 @@ Future<void> showGenerateCodeDialog({
         ),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }

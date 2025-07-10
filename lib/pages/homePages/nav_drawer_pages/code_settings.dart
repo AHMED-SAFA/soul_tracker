@@ -509,7 +509,7 @@ class _GeneratedCodesPageState extends State<GeneratedCodesPage>
         showBackButton: true,
         backgroundColor: Color(0xFF1A237E),
         showEnterCodeButton: false,
-        showShareButton: false,
+        showShareButton: true,
       ),
       body: RefreshIndicator(
         onRefresh: _refreshData,

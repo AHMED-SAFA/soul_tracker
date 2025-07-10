@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get_it/get_it.dart';
+import 'package:map_tracker/providers/location_provider.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -17,8 +19,30 @@ class AuthService {
   void authListener(User? user) {
     if (user != null) {
       _user = user;
+      // Start location tracking when user logs in
+      _startLocationTrackingForUser();
     } else {
       _user = null;
+      // Stop location tracking when user logs out
+      _stopLocationTrackingForUser();
+    }
+  }
+
+  void _startLocationTrackingForUser() {
+    try {
+      final locationProvider = GetIt.instance.get<LocationProvider>();
+      locationProvider.initializeForUser();
+    } catch (e) {
+      print('Error starting location tracking: $e');
+    }
+  }
+
+  void _stopLocationTrackingForUser() {
+    try {
+      final locationProvider = GetIt.instance.get<LocationProvider>();
+      locationProvider.cleanupForUser();
+    } catch (e) {
+      print('Error stopping location tracking: $e');
     }
   }
 
@@ -115,7 +139,7 @@ class AuthService {
       }
     } on FirebaseAuthException catch (e) {
       print('Registration error: ${e.message}');
-      rethrow; // Re-throw to handle in UI
+      rethrow;
     } catch (e) {
       print('Unexpected registration error: $e');
       throw FirebaseAuthException(
@@ -165,7 +189,6 @@ class AuthService {
         await _user!.updateDisplayName(name);
       }
 
-      // Update user data in Firestore
       await _firestore.collection('users').doc(_user!.uid).update({
         if (name != null) 'name': name,
         if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
@@ -190,23 +213,16 @@ class AuthService {
     }
   }
 
-  // Check if user is authenticated
   bool get isAuthenticated => _user != null;
-
-  // Get current user ID
   String? get currentUserId => _user?.uid;
-
-  // Get current user email
   String? get currentUserEmail => _user?.email;
 
-  // Send email verification
   Future<void> sendEmailVerification() async {
     if (_user != null && !_user!.emailVerified) {
       await _user!.sendEmailVerification();
     }
   }
 
-  // Send password reset email
   Future<void> sendPasswordResetEmail(String email) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);

@@ -31,7 +31,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final GetIt _getIt = GetIt.instance;
   late NavigationService _navigationService;
   late AuthService _authService;
@@ -39,12 +39,51 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _navigationService = _getIt.get<NavigationService>();
     _authService = _getIt.get<AuthService>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _handleStartupTasks();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App came back to foreground
+        if (_authService.user != null && !locationProvider.isTracking) {
+          locationProvider.startLocationTracking();
+        }
+        break;
+      case AppLifecycleState.paused:
+        // App went to background - keep tracking
+        if (_authService.user != null && !locationProvider.isTracking) {
+          locationProvider.startLocationTracking();
+        }
+        break;
+      case AppLifecycleState.detached:
+        // App is being terminated
+        // locationProvider.stopLocationTracking();
+        if (_authService.user != null && !locationProvider.isTracking) {
+          locationProvider.startLocationTracking();
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   Future<void> _handleStartupTasks() async {
@@ -54,10 +93,8 @@ class _MyAppState extends State<MyApp> {
       listen: false,
     );
 
-    // Load device data
     await deviceProvider.loadDeviceData();
 
-    // If user is already logged in, start location tracking immediately
     if (_authService.user != null) {
       await _initializeLocationTracking(deviceProvider, locationProvider);
     }
@@ -67,28 +104,19 @@ class _MyAppState extends State<MyApp> {
     DeviceProvider deviceProvider,
     LocationProvider locationProvider,
   ) async {
-    // Request location permission and start tracking
     await locationProvider.requestPermission();
 
     if (locationProvider.locationGranted) {
-      // Get initial location
-      await locationProvider.fetchLocation();
+      await _createOrUpdateDeviceRecord(deviceProvider);
 
-      // Create or update device record in database
-      await _updateDeviceRecord(deviceProvider, locationProvider);
-
-      // Start continuous tracking
-      if (!locationProvider.isTracking) {
-        await locationProvider.startLocationTracking();
-      }
+      await locationProvider.startLocationTracking();
     } else {
       _showLocationPermissionError();
     }
   }
 
-  Future<void> _updateDeviceRecord(
+  Future<void> _createOrUpdateDeviceRecord(
     DeviceProvider deviceProvider,
-    LocationProvider locationProvider,
   ) async {
     try {
       final uid = _authService.user?.uid ?? "unknown";
@@ -101,24 +129,14 @@ class _MyAppState extends State<MyApp> {
         'last_updated': DateTime.now().toIso8601String(),
       };
 
-      if (locationProvider.position != null) {
-        deviceData['location'] = {
-          'lat': locationProvider.position!.latitude,
-          'lng': locationProvider.position!.longitude,
-          'accuracy': locationProvider.position!.accuracy,
-          'speed': locationProvider.position!.speed,
-          'heading': locationProvider.position!.heading,
-        };
-      }
-
       await FirebaseFirestore.instance
           .collection('devices')
           .doc(uid)
           .set(deviceData, SetOptions(merge: true));
 
-      debugPrint('Device record updated successfully');
+      debugPrint('Device record created/updated successfully');
     } catch (e) {
-      debugPrint('Failed to update device record: $e');
+      debugPrint('Failed to create/update device record: $e');
     }
   }
 
