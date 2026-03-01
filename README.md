@@ -1,16 +1,189 @@
-# map_tracker
+<div align='center'>
+  
+  # Soul Tracker 
+  A real-time location tracking Flutter application that allows users to securely track and be tracked by people they trust. Built with Firebase, Cloudinary, and modern geolocation technologies.
 
-A new Flutter project.
+</div>
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+## 📱 Description
 
-A few resources to get you started if this is your first Flutter project:
+Soul Tracker enables secure, mutual location sharing between trusted contacts. Users can generate unique tracking keys and share them with people they want to track. Recipients can accept or reject tracking requests, and either party can revoke access at any time. Real-time location updates are displayed on an interactive map with comprehensive device information.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Key Features
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Mutual Tracking**: Generate unique keys to share with contacts and receive tracking keys from others
+- **Real-time Location Tracking**: Continuous GPS updates displayed on an interactive map
+- **Access Control**: Easy revocation of tracking keys to instantly stop sharing location
+- **Device Information**: View tracked device details including model, OS version, and IP address
+- **Secure Authentication**: Firebase-based user authentication
+- **Media Management**: Cloudinary integration for profile image uploads
+- **Background Tracking**: Location updates continue in the background
+- **Distance-based Updates**: Optimized location polling every 1 meter movement or 10 seconds
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Flutter** - Cross-platform mobile framework
+
+### Backend
+- **Firebase Authentication**: Firebase Auth
+- **Database**: Cloud Firestore
+- **Real-time Updates**: Firestore Listeners
+- **Media Storage**: Cloudinary - Cloud-based image management
+
+### Geolocation & Device
+- **Geolocator** - Location services
+- **Device Info Plus** - Device metadata
+
+### State Management
+- **Provider** pattern with **GetIt** service locator
+
+### UI Components
+- **Flutter Material Design**
+
+## 📋 Prerequisites
+
+- Flutter SDK
+- Dart SDK
+- Firebase project configured
+- Cloudinary account
+- Android/iOS development environment
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/AHMED-SAFA/soul_tracker
+cd soul_tracker
+```
+### 2. Environment Setup
+Create a .env file in the project root:
+```bash
+# Firebase Configuration
+FIREBASE_API_KEY_ANDROID=android_api_key
+FIREBASE_APP_ID_ANDROID=android_app_id
+FIREBASE_API_KEY_IOS=ios_api_key
+FIREBASE_APP_ID_IOS=ios_app_id
+FIREBASE_API_KEY_WEB=web_api_key
+FIREBASE_APP_ID_WEB=web_app_id
+FIREBASE_API_KEY_WINDOWS=windows_api_key
+FIREBASE_APP_ID_WINDOWS=windows_app_id
+FIREBASE_MESSAGING_SENDER_ID=messaging_sender_id
+FIREBASE_PROJECT_ID=project_id
+FIREBASE_STORAGE_BUCKET=storage_bucket
+FIREBASE_AUTH_DOMAIN=auth_domain
+FIREBASE_MEASUREMENT_ID_WEB=measurement_id_web
+FIREBASE_MEASUREMENT_ID_WINDOWS=measurement_id_windows
+FIREBASE_IOS_BUNDLE_ID=com.example.maptracker
+
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=cloud_name
+CLOUDINARY_API_KEY=api_key
+CLOUDINARY_SECRET_KEY=secret_key
+```
+
+### 3. Install Dependencies
+```bash
+flutter pub get
+```
+
+### 4. Run App
+```bash
+flutter run
+```
+
+## 📁 Project Structure
+```bash
+lib/
+├── config/
+│   └── cloudinary_config.dart      # Cloudinary settings
+├── providers/
+│   ├── location_provider.dart       # Real-time location tracking
+│   └── device_record_provider.dart  # Device information provider
+├── services/
+│   ├── auth_service.dart            # Firebase authentication
+│   ├── background_service.dart       # Background location tracking
+│   ├── location_foreground_service.dart
+│   ├── media_service.dart           # Cloudinary integration
+│   ├── devic_tracking_service.dart  # Tracking logic
+│   └── navigation_service.dart       # In-app navigation
+├── firebase_options.dart            # Firebase configuration
+└── utils.dart                       # Initialization utilities
+```
+
+## 🔐 Core Features Explained
+
+### Location Tracking
+- **Continuous Updates**: Timer-based updates every 10 seconds
+- **Distance Filtering**: Updates triggered when device moves 1+ meter
+  
+### Access Control
+- **Unique Keys**: Generate shareable tracking keys
+- **Bidirectional Tracking**: Both users can track each other simultaneously
+- **Instant Revocation**: Revoke keys to immediately stop tracking access
+- **Key Management**: View and delete active tracking keys
+
+### Device Information
+- **Device Model & Manufacturer**
+- **Operating System & Version**
+- **Public IP Address**
+- **Real-time GPS coordinates with accuracy metrics**
+
+## 📍 Permissions Required
+
+```xml
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+```
+
+## 🔄 Workflow
+
+- **User Registration**: Sign up with email/password via Firebase Auth
+- **Generate Key**: Create a unique tracking key
+- **Share Key**: Share the key
+- **Accept Tracking**: Recipient enters the key to start tracking
+- **View on Map**: Real-time location updates on interactive map
+- **Manage Access**: Revoke keys anytime to stop tracking
+
+## 🎨 UI/UX Features
+
+- Clean Material Design interface
+- Interactive map integration
+- Real-time location markers
+- Toast notifications for user actions
+- Responsive layout for various screen sizes
+
+## 📦 Dependencies
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Firebase
+  firebase_core: ^2.15.0
+  firebase_auth: ^4.7.0
+  cloud_firestore: ^4.8.0
+  
+  # Location & Device
+  geolocator: ^10.1.0
+  device_info_plus: ^9.1.0
+  
+  # Media
+  cloudinary_flutter: ^1.0.0
+  
+  # State Management
+  get_it: ^7.6.0
+  provider: ^6.0.5
+  
+  # Utilities
+  flutter_dotenv: ^5.1.0
+  fluttertoast: ^8.2.2
+  http: ^1.1.0
+```
+
+## 🤝 Contributing
+Feel free to submit a Pull Request.
