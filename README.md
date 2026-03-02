@@ -148,6 +148,34 @@ lib/
 - **View on Map**: Real-time location updates on interactive map
 - **Manage Access**: Revoke keys anytime to stop tracking
 
+## 📸 Screenshots
+
+<div align="center">
+
+  <h3>Authentication Screen</h3>
+  
+  <img src="https://github.com/user-attachments/assets/da9a2527-e40c-4481-ad32-c0beef597655" alt="Authentication Screen" height="500"/>
+  <img src="https://github.com/user-attachments/assets/074c31b7-8ca8-428b-9469-9883181df4af" alt="Authentication Screen" height="500"/>
+
+  <h3>Profile</h3>  
+  <img src="https://github.com/user-attachments/assets/b707db71-2dcf-4037-b6c0-f36541b850fb" alt="Profile Screen" height="500"/>
+  <img src="https://github.com/user-attachments/assets/cb419220-85e1-4333-a852-5cdd68d6f3aa" alt="Profile Screen" height="500"/>
+
+  <h3>🗝️ Generate Tracking Keys</h3>
+  <img src="https://github.com/user-attachments/assets/5403dacd-be5c-426b-b994-86c192a2e0bb" alt="Key Generate Screen" height="500"/>
+  <img src="https://github.com/user-attachments/assets/d7617362-1c88-4314-be7a-af7ade93ff2b" alt="Key Generate Screen" height="500"/>
+
+  <h3>📍 Real-Time Location on Map</h3>
+  <img src="https://github.com/user-attachments/assets/823b7d9e-e7ab-445e-a4ce-07e559e5dc7a" alt="Map Tracking Screen" height="500"/>
+  <img src="https://github.com/user-attachments/assets/a6d61d9d-b3ee-44b1-a39e-b5536dc0a6ff" alt="Map Tracking Screen" height="500"/>
+  <img src="https://github.com/user-attachments/assets/a1783d8e-b548-4c32-9182-3aa9b2719495" alt="Map Tracking Screen" height="500"/>
+
+  <h3>🗝️Keys management</h3>  
+  <img src="https://github.com/user-attachments/assets/d29215a6-f09d-454c-adcc-4239efa45aca" alt="Key Management Screen" height="500"/>
+  <img src="https://github.com/user-attachments/assets/2aef0f11-5f7d-4242-a90a-fc43324d112b" alt="Key Management Screen" height="500"/>
+
+</div>
+
 ## 🎨 UI/UX Features
 
 - Clean Material Design interface
